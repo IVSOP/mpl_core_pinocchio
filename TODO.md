@@ -1,0 +1,9 @@
+- [ ] allow remaining accounts to be passed in
+- [ ] a builder to allow users to create plugin data more easily
+- [ ] instructions
+    - [ ] CreateAsset
+    - [ ] CreateCollection
+    - [ ] Transfer
+- [ ] Improve instruction data serialization
+    - Is it faster to first go over the arguments and calculate their size, or allocate a magic sized array and start serializing into it? I do the latter for now
+    - There is also no error handling for going out of bounds, making this slow and also unpredictable
