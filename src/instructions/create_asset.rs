@@ -42,7 +42,7 @@ pub struct CreateAssetV1<'a> {
     /// The system program
     pub system_program: &'a AccountInfo,
     /// The SPL Noop Program
-    pub log_wrapper: &'a AccountInfo,
+    pub log_wrapper: Option<&'a AccountInfo>,
     /// The Metaplex Core Program
     pub mpl_core: &'a AccountInfo,
     // FIX: I have never ever had to use remaining accounts
@@ -84,7 +84,10 @@ impl CreateAssetV1<'_> {
                 None => AccountMeta::readonly(self.mpl_core.key()),
             },
             AccountMeta::readonly(self.system_program.key()),
-            AccountMeta::readonly(self.log_wrapper.key()),
+            match self.log_wrapper {
+                Some(log_wrapper) => AccountMeta::readonly(log_wrapper.key()),
+                None => AccountMeta::readonly(self.mpl_core.key()),
+            },
         ];
 
         let mut instruction_data = [0_u8; MAX_DATA_LEN];
@@ -106,7 +109,7 @@ impl CreateAssetV1<'_> {
                 self.owner.unwrap_or(self.mpl_core),
                 self.update_authority.unwrap_or(self.mpl_core),
                 self.system_program,
-                self.log_wrapper,
+                self.log_wrapper.unwrap_or(self.mpl_core),
             ],
             signers,
         )
