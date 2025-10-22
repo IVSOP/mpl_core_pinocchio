@@ -3,13 +3,13 @@ use crate::{
     Instructions,
 };
 
-pub struct CreateCollectionInstructionData<'a> {
+pub struct CreateCollectionV1InstructionData<'a> {
     pub name: &'a str,
     pub uri: &'a str,
     pub plugins: Option<&'a [PluginAuthorityPair<'a>]>,
 }
 
-impl<'a> Serialize for CreateCollectionInstructionData<'a> {
+impl<'a> Serialize for CreateCollectionV1InstructionData<'a> {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
         buffer[0] = Instructions::CreateCollection as u8;
         let mut offset = 1;

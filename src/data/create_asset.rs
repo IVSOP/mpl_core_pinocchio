@@ -19,14 +19,14 @@ impl Serialize for DataState {
     }
 }
 
-pub struct CreateAssetInstructionData<'a> {
+pub struct CreateAssetV1InstructionData<'a> {
     pub data_state: DataState,
     pub name: &'a str,
     pub uri: &'a str,
     pub plugins: Option<&'a [PluginAuthorityPair<'a>]>,
 }
 
-impl<'a> Serialize for CreateAssetInstructionData<'a> {
+impl<'a> Serialize for CreateAssetV1InstructionData<'a> {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
         buffer[0] = Instructions::CreateAsset as u8;
         let mut offset = 1;

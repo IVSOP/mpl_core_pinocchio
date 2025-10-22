@@ -6,7 +6,7 @@ use pinocchio::{
 };
 
 use crate::{
-    data::{create_asset::CreateAssetInstructionData, Serialize},
+    data::{create_asset::CreateAssetV1InstructionData, Serialize},
     MAX_DATA_LEN,
 };
 
@@ -26,7 +26,7 @@ use crate::{
 /// Accounts being optional is very cursed but mimics the behaviour of the official lib.
 /// Accounts set to None get replaced by mpl core program's account.
 /// Even the owner, which says "Defaults to the authority if not present", will get replaced inside the actual MPL program
-pub struct CreateAsset<'a> {
+pub struct CreateAssetV1<'a> {
     /// The address of the new asset
     pub asset: &'a AccountInfo,
     /// The collection to which the asset belongs
@@ -51,16 +51,16 @@ pub struct CreateAsset<'a> {
     // pub remaining_accounts: &'a [&'a AccountInfo]
 }
 
-impl CreateAsset<'_> {
+impl CreateAssetV1<'_> {
     #[inline(always)]
-    pub fn invoke(&self, data: &CreateAssetInstructionData) -> ProgramResult {
+    pub fn invoke(&self, data: &CreateAssetV1InstructionData) -> ProgramResult {
         self.invoke_signed(data, &[])
     }
 
     #[inline(always)]
     pub fn invoke_signed(
         &self,
-        data: &CreateAssetInstructionData,
+        data: &CreateAssetV1InstructionData,
         signers: &[Signer],
     ) -> ProgramResult {
         // account metadata
