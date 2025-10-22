@@ -69,7 +69,7 @@ impl<T: Serialize> Serialize for &[T] {
 
 impl Serialize for Pubkey {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        buffer.copy_from_slice(self);
+        buffer[..32].copy_from_slice(self);
         32
     }
 }
@@ -83,14 +83,14 @@ impl Serialize for u8 {
 
 impl Serialize for u16 {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        buffer.copy_from_slice(&self.to_le_bytes());
+        buffer[..2].copy_from_slice(&self.to_le_bytes());
         2
     }
 }
 
 impl Serialize for u32 {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        buffer.copy_from_slice(&self.to_le_bytes());
+        buffer[..4].copy_from_slice(&self.to_le_bytes());
         4
     }
 }
