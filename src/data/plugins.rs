@@ -10,7 +10,7 @@ pub struct Creator {
 impl Serialize for Creator {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
         let mut offset = self.address.serialize_to(buffer);
-        offset += self.percentage.serialize_to(buffer);
+        offset += self.percentage.serialize_to(&mut buffer[offset..]);
         offset
     }
 }

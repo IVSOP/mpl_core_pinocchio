@@ -60,11 +60,12 @@ impl CreateCollectionV1<'_> {
 
         let mut instruction_data = [0_u8; MAX_DATA_LEN];
         let len = data.serialize_to(&mut instruction_data);
+        let data = &instruction_data[..len];
 
         let instruction = Instruction {
             program_id: &crate::MPL_CORE_ID,
             accounts: &account_metas,
-            data: &instruction_data[..len],
+            data,
         };
 
         invoke_signed(
@@ -73,7 +74,6 @@ impl CreateCollectionV1<'_> {
                 self.collection,
                 self.update_authority.unwrap_or(self.mpl_core),
                 self.payer,
-                self.update_authority.unwrap_or(self.mpl_core),
                 self.system_program,
             ],
             signers,
