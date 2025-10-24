@@ -7,7 +7,6 @@ use pinocchio::{
 
 use crate::{
     data::{create_collection::CreateCollectionV1InstructionData, Serialize},
-    MAX_DATA_LEN,
 };
 
 /// Create a collection
@@ -37,8 +36,12 @@ pub struct CreateCollectionV1<'a> {
 
 impl CreateCollectionV1<'_> {
     #[inline(always)]
-    pub fn invoke(&self, data: &CreateCollectionV1InstructionData) -> ProgramResult {
-        self.invoke_signed(data, &[])
+    pub fn invoke(
+        &self,
+        data: &CreateCollectionV1InstructionData,
+        serialization_buffer: &mut [u8],
+    ) -> ProgramResult {
+        self.invoke_signed(data, &[], serialization_buffer)
     }
 
     #[inline(always)]
@@ -46,6 +49,7 @@ impl CreateCollectionV1<'_> {
         &self,
         data: &CreateCollectionV1InstructionData,
         signers: &[Signer],
+        serialization_buffer: &mut [u8],
     ) -> ProgramResult {
         // account metadata
         let account_metas: &[AccountMeta] = &[
@@ -58,9 +62,8 @@ impl CreateCollectionV1<'_> {
             AccountMeta::readonly(self.system_program.key()),
         ];
 
-        let mut instruction_data = [0_u8; MAX_DATA_LEN];
-        let len = data.serialize_to(&mut instruction_data);
-        let data = &instruction_data[..len];
+        let len = data.serialize_to(serialization_buffer);
+        let data = &serialization_buffer[..len];
 
         let instruction = Instruction {
             program_id: &crate::MPL_CORE_ID,

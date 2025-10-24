@@ -86,8 +86,8 @@ impl<'a> Serialize for UpdateDelegate<'a> {
 }
 
 pub struct Attribute<'a> {
-    pub key: &'a str,
-    pub value: &'a str,
+    pub key: &'a [u8],
+    pub value: &'a [u8],
 }
 
 impl<'a> Serialize for Attribute<'a> {
@@ -120,8 +120,8 @@ impl Serialize for Edition {
 
 pub struct MasterEdition<'a> {
     pub max_supply: Option<u32>,
-    pub name: Option<&'a str>,
-    pub uri: Option<&'a str>,
+    pub name: Option<&'a [u8]>,
+    pub uri: Option<&'a [u8]>,
 }
 
 impl<'a> Serialize for MasterEdition<'a> {
@@ -158,7 +158,7 @@ impl<'a> Serialize for VerifiedCreators<'a> {
 
 pub struct AutographSignature<'a> {
     pub address: Pubkey,
-    pub message: &'a str,
+    pub message: &'a [u8],
 }
 
 impl<'a> Serialize for AutographSignature<'a> {

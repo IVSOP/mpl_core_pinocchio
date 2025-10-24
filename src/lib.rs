@@ -14,5 +14,3 @@ pub(crate) enum Instructions {
 }
 
 pub const MPL_CORE_ID: Pubkey = pubkey!("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
-
-const MAX_DATA_LEN: usize = 2000;

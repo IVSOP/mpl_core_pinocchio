@@ -21,8 +21,8 @@ impl Serialize for DataState {
 
 pub struct CreateAssetV1InstructionData<'a> {
     pub data_state: DataState,
-    pub name: &'a str,
-    pub uri: &'a str,
+    pub name: &'a [u8],
+    pub uri: &'a [u8],
     pub plugins: Option<&'a [PluginAuthorityPair<'a>]>,
 }
 

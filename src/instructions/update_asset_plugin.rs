@@ -5,36 +5,32 @@ use pinocchio::{
     ProgramResult,
 };
 
-use crate::{
-    data::{create_asset::CreateAssetV1InstructionData, Serialize},
-};
+use crate::data::{plugins::Plugin, Serialize};
 
-/// Create an asset
+/// Update an asset
 ///
 /// ### Accounts:
-///   0. `[WRITE, SIGNER]` Asset
+///   0. `[WRITE]` Asset
 ///   1. `[WRITE]` Collection
-///   2. `[SIGNER]` Authority
-///   3. `[WRITE, SIGNER]` Payer
-///   4. `[]` Owner
-///   5. `[]` Update Authority
-///   6. `[]` System Program
-///   7. `[]` SPL Noop
-///   8. `[]` Metaplex Core Program
+///   2. `[WRITE, SIGNER]` Payer
+///   3. `[SIGNER]` Authority
+///   4. `[]` System Program
+///   5. `[]` SPL Noop
+///   6. `[]` Metaplex Core Program
 ///
 /// Accounts being optional is very cursed but mimics the behaviour of the official lib.
 /// Accounts set to None get replaced by mpl core program's account.
 /// Even the owner, which says "Defaults to the authority if not present", will get replaced inside the actual MPL program
-pub struct CreateAssetV1<'a> {
-    /// The address of the new asset
+pub struct UpdateAssetPluginV1<'a> {
+    /// The asset to update
     pub asset: &'a AccountInfo,
     /// The collection to which the asset belongs
     pub collection: Option<&'a AccountInfo>,
-    /// The authority signing for creation
-    pub authority: Option<&'a AccountInfo>,
-    /// The account paying for the storage fees
+    /// The payer
     pub payer: &'a AccountInfo,
-    /// The owner of the new asset. Defaults to the authority if not present.
+    /// The authority
+    pub authority: Option<&'a AccountInfo>,
+    /// The owner of the asset
     pub owner: Option<&'a AccountInfo>,
     /// The authority on the new asset
     pub update_authority: Option<&'a AccountInfo>,
@@ -50,41 +46,33 @@ pub struct CreateAssetV1<'a> {
     // pub remaining_accounts: &'a [&'a AccountInfo]
 }
 
-impl CreateAssetV1<'_> {
+impl UpdateAssetPluginV1<'_> {
     #[inline(always)]
     pub fn invoke(
         &self,
-        data: &CreateAssetV1InstructionData,
+        plugin: &Plugin,
         serialization_buffer: &mut [u8],
     ) -> ProgramResult {
-        self.invoke_signed(data, &[], serialization_buffer)
+        self.invoke_signed(plugin, &[], serialization_buffer)
     }
 
     #[inline(always)]
     pub fn invoke_signed(
         &self,
-        data: &CreateAssetV1InstructionData,
+        plugin: &Plugin,
         signers: &[Signer],
         serialization_buffer: &mut [u8],
     ) -> ProgramResult {
         // account metadata
         let account_metas: &[AccountMeta] = &[
-            AccountMeta::writable_signer(self.asset.key()),
+            AccountMeta::writable(self.asset.key()),
             match self.collection {
                 Some(collection) => AccountMeta::writable(collection.key()),
                 None => AccountMeta::readonly(self.mpl_core.key()),
             },
+            AccountMeta::writable_signer(&self.payer.key()),
             match self.authority {
                 Some(authority) => AccountMeta::readonly_signer(authority.key()),
-                None => AccountMeta::readonly(self.mpl_core.key()),
-            },
-            AccountMeta::writable_signer(self.payer.key()),
-            match self.owner {
-                Some(owner) => AccountMeta::readonly(owner.key()),
-                None => AccountMeta::readonly(self.mpl_core.key()),
-            },
-            match self.update_authority {
-                Some(update_authority) => AccountMeta::readonly(update_authority.key()),
                 None => AccountMeta::readonly(self.mpl_core.key()),
             },
             AccountMeta::readonly(self.system_program.key()),
@@ -94,7 +82,7 @@ impl CreateAssetV1<'_> {
             },
         ];
 
-        let len = data.serialize_to(serialization_buffer);
+        let len = plugin.serialize_to(serialization_buffer);
         let data = &serialization_buffer[..len];
 
         let instruction = Instruction {
@@ -108,10 +96,8 @@ impl CreateAssetV1<'_> {
             &[
                 self.asset,
                 self.collection.unwrap_or(self.mpl_core),
-                self.authority.unwrap_or(self.mpl_core),
                 self.payer,
-                self.owner.unwrap_or(self.mpl_core),
-                self.update_authority.unwrap_or(self.mpl_core),
+                self.authority.unwrap_or(self.mpl_core),
                 self.system_program,
                 self.log_wrapper.unwrap_or(self.mpl_core),
             ],

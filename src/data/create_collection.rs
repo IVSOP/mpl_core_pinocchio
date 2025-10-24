@@ -4,8 +4,8 @@ use crate::{
 };
 
 pub struct CreateCollectionV1InstructionData<'a> {
-    pub name: &'a str,
-    pub uri: &'a str,
+    pub name: &'a [u8],
+    pub uri: &'a [u8],
     pub plugins: Option<&'a [PluginAuthorityPair<'a>]>,
 }
 
