@@ -344,3 +344,64 @@ impl<'a> Serialize for PluginAuthorityPair<'a> {
         offset
     }
 }
+
+pub enum UpdateAuthority {
+    None,
+    Address(Pubkey),
+    Collection(Pubkey),
+}
+
+impl Serialize for UpdateAuthority {
+    fn serialize_to(&self, buffer: &mut [u8]) -> usize {
+        match self {
+            Self::None => {
+                buffer[0] = 0;
+                1
+            },
+            Self::Address(address) => {
+                buffer[1] = 0;
+                1 + address.serialize_to(&mut buffer[1..])
+            },
+            Self::Collection(collection) => {
+                buffer[2] = 0;
+                1 + collection.serialize_to(&mut buffer[1..])
+            }
+        }
+    }
+}
+
+pub struct HashablePluginSchema<'a> {
+    pub index: u64,
+    pub authority: PluginAuthority,
+    pub plugin: Plugin<'a>,
+}
+
+impl<'a> Serialize for HashablePluginSchema<'a> {
+    fn serialize_to(&self, buffer: &mut [u8]) -> usize {
+        let mut offset = self.index.serialize_to(buffer);
+        offset += self.authority.serialize_to(&mut buffer[offset..]);
+        offset += self.plugin.serialize_to(&mut buffer[offset..]);
+        offset
+    }
+}
+
+pub struct CompressionProof<'a> {
+    pub owner: Pubkey,
+    pub update_authority: UpdateAuthority,
+    pub name: &'a [u8],
+    pub uri: &'a [u8],
+    pub seq: u64,
+    pub plugins: &'a [HashablePluginSchema<'a>],
+}
+
+impl<'a> Serialize for CompressionProof<'a> {
+    fn serialize_to(&self, buffer: &mut [u8]) -> usize {
+        let mut offset = self.owner.serialize_to(buffer);
+        offset += self.update_authority.serialize_to(&mut buffer[offset..]);
+        offset += self.name.serialize_to(&mut buffer[offset..]);
+        offset += self.uri.serialize_to(&mut buffer[offset..]);
+        offset += self.seq.serialize_to(&mut buffer[offset..]);
+        offset += self.plugins.serialize_to(&mut buffer[offset..]);
+        offset
+    }
+}

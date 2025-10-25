@@ -13,7 +13,7 @@ use crate::{
 ///
 /// ### Accounts:
 ///   0. `[WRITE, SIGNER]` Collection
-///   1. `[]` Update Authority
+///   1. `[OPTIONAL]` Update Authority
 ///   2. `[WRITE, SIGNER]` Payer
 ///   3. `[]` System Program
 ///   4. `[]` Metaplex Core Program

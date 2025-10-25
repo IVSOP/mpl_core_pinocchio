@@ -3,6 +3,9 @@ use pinocchio::pubkey::Pubkey;
 pub mod create_asset;
 pub mod create_collection;
 pub mod plugins;
+pub mod update_asset_plugin;
+pub mod update_collection_plugin;
+pub mod transfer;
 
 pub trait Serialize {
     /// Serialize into a slice, starting at 0, returning how many bytes were written
@@ -92,6 +95,13 @@ impl Serialize for u32 {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
         buffer[..4].copy_from_slice(&self.to_le_bytes());
         4
+    }
+}
+
+impl Serialize for u64 {
+    fn serialize_to(&self, buffer: &mut [u8]) -> usize {
+        buffer[..8].copy_from_slice(&self.to_le_bytes());
+        8
     }
 }
 

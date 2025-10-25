@@ -5,17 +5,17 @@ use pinocchio::{
     ProgramResult,
 };
 
-use crate::data::{plugins::Plugin, Serialize};
+use crate::data::{update_asset_plugin::UpdateAssetPluginV1InstructionData, Serialize};
 
 /// Update an asset
 ///
 /// ### Accounts:
 ///   0. `[WRITE]` Asset
-///   1. `[WRITE]` Collection
+///   1. `[WRITE, OPTIONAL]` Collection
 ///   2. `[WRITE, SIGNER]` Payer
-///   3. `[SIGNER]` Authority
+///   3. `[SIGNER, OPTIONAL]` Authority
 ///   4. `[]` System Program
-///   5. `[]` SPL Noop
+///   5. `[OPTIONAL]` SPL Noop
 ///   6. `[]` Metaplex Core Program
 ///
 /// Accounts being optional is very cursed but mimics the behaviour of the official lib.
@@ -30,10 +30,6 @@ pub struct UpdateAssetPluginV1<'a> {
     pub payer: &'a AccountInfo,
     /// The authority
     pub authority: Option<&'a AccountInfo>,
-    /// The owner of the asset
-    pub owner: Option<&'a AccountInfo>,
-    /// The authority on the new asset
-    pub update_authority: Option<&'a AccountInfo>,
     /// The system program
     pub system_program: &'a AccountInfo,
     /// The SPL Noop Program
@@ -50,16 +46,16 @@ impl UpdateAssetPluginV1<'_> {
     #[inline(always)]
     pub fn invoke(
         &self,
-        plugin: &Plugin,
+        instruction_data: &UpdateAssetPluginV1InstructionData,
         serialization_buffer: &mut [u8],
     ) -> ProgramResult {
-        self.invoke_signed(plugin, &[], serialization_buffer)
+        self.invoke_signed(instruction_data, &[], serialization_buffer)
     }
 
     #[inline(always)]
     pub fn invoke_signed(
         &self,
-        plugin: &Plugin,
+        instruction_data: &UpdateAssetPluginV1InstructionData,
         signers: &[Signer],
         serialization_buffer: &mut [u8],
     ) -> ProgramResult {
@@ -82,7 +78,7 @@ impl UpdateAssetPluginV1<'_> {
             },
         ];
 
-        let len = plugin.serialize_to(serialization_buffer);
+        let len = instruction_data.serialize_to(serialization_buffer);
         let data = &serialization_buffer[..len];
 
         let instruction = Instruction {

@@ -5,16 +5,16 @@ use pinocchio::{
     ProgramResult,
 };
 
-use crate::data::{plugins::Plugin, Serialize};
+use crate::data::{update_asset_plugin::UpdateAssetPluginV1InstructionData, Serialize};
 
 /// Update a collection
 ///
 /// ### Accounts:
 ///   0. `[WRITE]` Collection
 ///   1. `[WRITE, SIGNER]` payer
-///   2. `[SIGNER]` Authority
+///   2. `[SIGNER, OPTIONAL]` Authority
 ///   4. `[]` System Program
-///   5. `[]` SPL Noop
+///   5. `[OPTIONAL]` SPL Noop
 ///   6. `[]` Metaplex Core Program
 ///
 /// Accounts being optional is very cursed but mimics the behaviour of the official lib.
@@ -43,16 +43,16 @@ impl UpdateCollectionPluginV1<'_> {
     #[inline(always)]
     pub fn invoke(
         &self,
-        plugin: &Plugin,
+        instruction_data: &UpdateAssetPluginV1InstructionData,
         serialization_buffer: &mut [u8],
     ) -> ProgramResult {
-        self.invoke_signed(plugin, &[], serialization_buffer)
+        self.invoke_signed(instruction_data, &[], serialization_buffer)
     }
 
     #[inline(always)]
     pub fn invoke_signed(
         &self,
-        plugin: &Plugin,
+        instruction_data: &UpdateAssetPluginV1InstructionData,
         signers: &[Signer],
         serialization_buffer: &mut [u8],
     ) -> ProgramResult {
@@ -71,7 +71,7 @@ impl UpdateCollectionPluginV1<'_> {
             },
         ];
 
-        let len = plugin.serialize_to(serialization_buffer);
+        let len = instruction_data.serialize_to(serialization_buffer);
         let data = &serialization_buffer[..len];
 
         let instruction = Instruction {
