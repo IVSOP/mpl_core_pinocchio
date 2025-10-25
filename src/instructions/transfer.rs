@@ -47,11 +47,7 @@ pub struct TransferV1<'a> {
 
 impl TransferV1<'_> {
     #[inline(always)]
-    pub fn invoke(
-        &self,
-        plugin: &Plugin,
-        serialization_buffer: &mut [u8],
-    ) -> ProgramResult {
+    pub fn invoke(&self, plugin: &Plugin, serialization_buffer: &mut [u8]) -> ProgramResult {
         self.invoke_signed(plugin, &[], serialization_buffer)
     }
 

@@ -1,11 +1,12 @@
 use pinocchio::pubkey::Pubkey;
 
+pub mod asset;
 pub mod create_asset;
 pub mod create_collection;
 pub mod plugins;
+pub mod transfer;
 pub mod update_asset_plugin;
 pub mod update_collection_plugin;
-pub mod transfer;
 
 pub trait Serialize {
     /// Serialize into a slice, starting at 0, returning how many bytes were written

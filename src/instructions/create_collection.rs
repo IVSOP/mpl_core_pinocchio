@@ -5,9 +5,7 @@ use pinocchio::{
     ProgramResult,
 };
 
-use crate::{
-    data::{create_collection::CreateCollectionV1InstructionData, Serialize},
-};
+use crate::data::{create_collection::CreateCollectionV1InstructionData, Serialize};
 
 /// Create a collection
 ///

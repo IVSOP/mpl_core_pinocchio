@@ -4,10 +4,10 @@ use crate::{
 };
 
 pub struct TransferV1InstructionData<'a> {
-    pub compression_proof: Option<CompressionProof<'a>>
+    pub compression_proof: Option<CompressionProof<'a>>,
 }
 
-impl<'a> Serialize for TransferV1InstructionData <'a>{
+impl<'a> Serialize for TransferV1InstructionData<'a> {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
         buffer[0] = Instructions::CreateCollection as u8;
         let mut offset = 1;

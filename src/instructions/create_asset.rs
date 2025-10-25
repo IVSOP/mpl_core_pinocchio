@@ -5,9 +5,7 @@ use pinocchio::{
     ProgramResult,
 };
 
-use crate::{
-    data::{create_asset::CreateAssetV1InstructionData, Serialize},
-};
+use crate::data::{create_asset::CreateAssetV1InstructionData, Serialize};
 
 /// Create an asset
 ///

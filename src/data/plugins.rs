@@ -222,6 +222,31 @@ pub enum Plugin<'a> {
     PermanentFreezeExecute(PermanentFreezeExecute),
 }
 
+impl Plugin<'_> {
+    pub fn get_plugin_number(&self) -> u8 {
+        match self {
+            Self::Royalties(_) => 0,
+            Self::FreezeDelegate(_) => 1,
+            Self::BurnDelegate => 2,
+            Self::TransferDelegate => 3,
+            Self::UpdateDelegate(_) => 4,
+            Self::PermanentFreezeDelegate(_) => 5,
+            Self::Attributes(_) => 6,
+            Self::PermanentTransferDelegate => 7,
+            Self::PermanentBurnDelegate => 8,
+            Self::Edition(_) => 9,
+            Self::MasterEdition(_) => 10,
+            Self::AddBlocker => 11,
+            Self::ImmutableMetadata => 12,
+            Self::VerifiedCreators(_) => 13,
+            Self::Autograph(_) => 14,
+            Self::BubblegumV2 => 15,
+            Self::FreezeExecute(_) => 16,
+            Self::PermanentFreezeExecute(_) => 17,
+        }
+    }
+}
+
 impl<'a> Serialize for Plugin<'a> {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
         match self {
@@ -302,6 +327,7 @@ impl<'a> Serialize for Plugin<'a> {
 }
 
 #[repr(u8)]
+#[derive(Clone, Copy)]
 pub enum PluginAuthority {
     None,
     Owner,
@@ -357,11 +383,11 @@ impl Serialize for UpdateAuthority {
             Self::None => {
                 buffer[0] = 0;
                 1
-            },
+            }
             Self::Address(address) => {
                 buffer[1] = 0;
                 1 + address.serialize_to(&mut buffer[1..])
-            },
+            }
             Self::Collection(collection) => {
                 buffer[2] = 0;
                 1 + collection.serialize_to(&mut buffer[1..])
