@@ -37,7 +37,7 @@ impl<'a> Serialize for AssetInfo<'a> {
 
         // now we write all of the plugins
         // WARN: this is really ugly I don't care. while serializing I need to store how big each plugin was
-        const MAX_PLUGINS_MAGIC_NUMBER: usize = 128;
+        const MAX_PLUGINS_MAGIC_NUMBER: usize = 16;
         let mut registry_records: [MaybeUninit<RegistryRecordSafe>; MAX_PLUGINS_MAGIC_NUMBER] =
             unsafe { MaybeUninit::uninit().assume_init() };
 

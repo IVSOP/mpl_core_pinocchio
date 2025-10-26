@@ -5,7 +5,7 @@ use pinocchio::{
     ProgramResult,
 };
 
-use crate::data::{plugins::Plugin, transfer::TransferV1InstructionData, Serialize};
+use crate::data::{transfer::TransferV1InstructionData, Serialize};
 
 /// Transfer an asset
 ///
