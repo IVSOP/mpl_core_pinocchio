@@ -108,12 +108,11 @@ impl Serialize for u64 {
 
 impl Serialize for bool {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        if *self {
-            buffer[0] = 0;
+        buffer[0] = if *self {
+            1
         } else {
-            buffer[0] = 1;
-        }
-
+            0
+        };
         1
     }
 }
