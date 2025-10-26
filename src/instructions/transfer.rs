@@ -5,7 +5,7 @@ use pinocchio::{
     ProgramResult,
 };
 
-use crate::data::{plugins::Plugin, Serialize};
+use crate::data::{plugins::Plugin, transfer::TransferV1InstructionData, Serialize};
 
 /// Transfer an asset
 ///
@@ -47,14 +47,14 @@ pub struct TransferV1<'a> {
 
 impl TransferV1<'_> {
     #[inline(always)]
-    pub fn invoke(&self, plugin: &Plugin, serialization_buffer: &mut [u8]) -> ProgramResult {
-        self.invoke_signed(plugin, &[], serialization_buffer)
+    pub fn invoke(&self, data: &TransferV1InstructionData, serialization_buffer: &mut [u8]) -> ProgramResult {
+        self.invoke_signed(data, &[], serialization_buffer)
     }
 
     #[inline(always)]
     pub fn invoke_signed(
         &self,
-        plugin: &Plugin,
+        data: &TransferV1InstructionData,
         signers: &[Signer],
         serialization_buffer: &mut [u8],
     ) -> ProgramResult {
@@ -78,7 +78,7 @@ impl TransferV1<'_> {
             },
         ];
 
-        let len = plugin.serialize_to(serialization_buffer);
+        let len = data.serialize_to(serialization_buffer);
         let data = &serialization_buffer[..len];
 
         let instruction = Instruction {
