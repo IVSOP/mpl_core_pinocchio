@@ -42,7 +42,6 @@ impl CreateCollectionV1<'_> {
         self.invoke_signed(data, &[], serialization_buffer)
     }
 
-    #[inline(always)]
     pub fn invoke_signed(
         &self,
         data: &CreateCollectionV1InstructionData,

@@ -58,7 +58,6 @@ impl CreateAssetV1<'_> {
         self.invoke_signed(data, &[], serialization_buffer)
     }
 
-    #[inline(always)]
     pub fn invoke_signed(
         &self,
         data: &CreateAssetV1InstructionData,

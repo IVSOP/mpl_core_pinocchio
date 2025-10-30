@@ -49,7 +49,6 @@ impl UpdateCollectionPluginV1<'_> {
         self.invoke_signed(instruction_data, &[], serialization_buffer)
     }
 
-    #[inline(always)]
     pub fn invoke_signed(
         &self,
         instruction_data: &UpdateAssetPluginV1InstructionData,
