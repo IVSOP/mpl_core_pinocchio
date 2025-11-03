@@ -7,6 +7,8 @@ pub mod plugins;
 pub mod transfer;
 pub mod update_asset_plugin;
 pub mod update_collection_plugin;
+pub mod burn_collection;
+pub mod burn_asset;
 
 pub trait Serialize {
     /// Serialize into a slice, starting at 0, returning how many bytes were written

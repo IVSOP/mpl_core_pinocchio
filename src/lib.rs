@@ -13,6 +13,8 @@ pub(crate) enum Instructions {
     CreateCollection = 1,
     UpdateAssetPlugin = 6,
     UpdateCollectionPlugin = 7,
+    BurnAsset = 12,
+    BurnCollection = 13,
     TransferAsset = 14,
 }
 
