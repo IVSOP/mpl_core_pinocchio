@@ -10,7 +10,7 @@ use crate::data::{create_asset::CreateAssetV1InstructionData, Serialize};
 /// Create an asset
 ///
 /// ### Accounts:
-///   0. `[WRITE, SIGNER]` Asset
+///   0. `[WRITE]` Asset
 ///   1. `[WRITE, OPTIONAL]` Collection
 ///   2. `[SIGNER, OPTIONAL]` Authority
 ///   3. `[WRITE, SIGNER]` Payer
@@ -66,7 +66,7 @@ impl CreateAssetV1<'_> {
     ) -> ProgramResult {
         // account metadata
         let account_metas: &[AccountMeta] = &[
-            AccountMeta::writable_signer(self.asset.key()),
+            AccountMeta::writable(self.asset.key()),
             match self.collection {
                 Some(collection) => AccountMeta::writable(collection.key()),
                 None => AccountMeta::readonly(self.mpl_core.key()),
