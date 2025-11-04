@@ -7,13 +7,6 @@ use pinocchio::{
 
 use crate::data::{Serialize, burn_asset::BurnAssetV1InstructionData};
 
-///   0. `[writable]` asset
-///   1. `[writable, optional]` collection
-///   2. `[writable, signer]` payer
-///   3. `[signer, optional]` authority
-///   4. `[optional]` system_program
-///   5. `[optional]` log_wrapper
-
 /// Burn an asset
 ///
 /// ### Accounts:

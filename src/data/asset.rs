@@ -1,8 +1,7 @@
-use pinocchio::pubkey::Pubkey;
+use pinocchio::{program_error::ProgramError, pubkey::Pubkey};
 
 use crate::data::{
-    plugins::{Plugin, PluginAuthority, UpdateAuthority},
-    Serialize,
+    DeserializeSized, Serialize, Skip, plugins::{Plugin, PluginAuthority, UpdateAuthority}, skip_sized, skip_sized_slice
 };
 use core::mem::MaybeUninit;
 
@@ -104,6 +103,41 @@ impl<'a> Serialize for BaseAssetV1<'a> {
     }
 }
 
+impl<'a> Skip for BaseAssetV1<'_> {
+    // DOES NOT ASSUME KEY WAS SKIPPED
+    fn skip_bytes(bytes: &[u8]) -> Result<usize, ProgramError> {
+        let mut offset: usize = 0;
+        offset += skip_sized::<Pubkey>();
+        offset += UpdateAuthority::skip_bytes(&bytes[offset..])?;
+        offset += skip_sized_slice::<u8>(&bytes[offset..])?;
+        offset += skip_sized_slice::<u8>(&bytes[offset..])?;
+        offset += Option::<u64>::skip_bytes(&bytes[offset..])?;
+        Ok(offset)
+    }
+}
+
+pub struct BaseCollectionV1<'a> {
+    pub key: Key,
+    pub update_authority: Pubkey,
+    pub name: &'a [u8],
+    pub uri: &'a [u8],
+    pub num_minted: u32,
+    pub current_size: u32,
+}
+
+impl<'a> Skip for BaseCollectionV1<'_> {
+    // DOES NOT ASSUME KEY WAS SKIPPED
+    fn skip_bytes(bytes: &[u8]) -> Result<usize, ProgramError> {
+        let mut offset: usize = 0;
+        offset += skip_sized::<Pubkey>();
+        offset += skip_sized_slice::<u8>(&bytes[offset..])?;
+        offset += skip_sized_slice::<u8>(&bytes[offset..])?;
+        offset += skip_sized::<u32>();
+        offset += skip_sized::<u32>();
+        Ok(offset)
+    }
+}
+
 #[repr(u8)]
 #[derive(Copy, Clone)]
 pub enum Key {
@@ -122,6 +156,20 @@ impl Serialize for Key {
     }
 }
 
+impl Key {
+    pub fn deserialize_from(bytes: &[u8]) -> Result<Self, ProgramError> {
+        match bytes[0] {
+            0 => Ok(Key::Uninitialized),
+            1 => Ok(Key::AssetV1),
+            2 => Ok(Key::HashedAssetV1),
+            3 => Ok(Key::PluginHeaderV1),
+            4 => Ok(Key::PluginRegistryV1),
+            5 => Ok(Key::CollectionV1),
+            _ => Err(ProgramError::InvalidAccountData),
+        }
+    }
+}
+
 pub struct PluginHeaderV1 {
     pub key: Key,
     pub plugin_registry_offset: u64,
@@ -134,6 +182,24 @@ impl Serialize for PluginHeaderV1 {
             .plugin_registry_offset
             .serialize_to(&mut buffer[offset..]);
         offset
+    }
+}
+
+impl DeserializeSized for PluginHeaderV1 {
+    fn deserialize(bytes: &[u8]) -> Result<Self, ProgramError> {
+        let key = Key::deserialize_from(bytes)?;
+
+        if ! matches!(key, Key::PluginHeaderV1) {
+            return Err(ProgramError::InvalidAccountData);
+        }
+        let plugin_registry_offset = u64::deserialize(&bytes[1..])?;
+
+        Ok(
+            Self {
+                key,
+                plugin_registry_offset,
+            }
+        )
     }
 }
 

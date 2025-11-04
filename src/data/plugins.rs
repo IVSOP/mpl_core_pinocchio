@@ -1,7 +1,10 @@
-use pinocchio::pubkey::Pubkey;
+use bytemuck::{Pod, Zeroable, try_cast_slice};
+use pinocchio::{program_error::ProgramError, pubkey::Pubkey};
 
-use crate::data::Serialize;
+use crate::data::{DeserializeSized, Serialize, Skip, asset::{BaseAssetV1, BaseCollectionV1, Key, PluginHeaderV1}};
 
+#[derive(Pod, Zeroable, Clone, Copy)]
+#[repr(C)]
 pub struct Creator {
     pub address: Pubkey,
     pub percentage: u8,
@@ -335,6 +338,19 @@ pub enum PluginAuthority {
     Address(Pubkey),
 }
 
+impl Skip for PluginAuthority {
+    fn skip_bytes(bytes: &[u8]) -> Result<usize, ProgramError> {
+        let disc = bytes[0];
+        match disc {
+            0 => Ok(1),
+            1 => Ok(1),
+            2 => Ok(1),
+            3 => Ok(1 + size_of::<Pubkey>()),
+            _ => Err(ProgramError::InvalidAccountData)
+        }
+    }
+}
+
 impl Serialize for PluginAuthority {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
         match self {
@@ -396,6 +412,18 @@ impl Serialize for UpdateAuthority {
     }
 }
 
+impl Skip for UpdateAuthority {
+    fn skip_bytes(bytes: &[u8]) -> Result<usize, ProgramError> {
+        let disc = bytes[0];
+        match disc {
+            0 => Ok(1),
+            1 => Ok(1 + size_of::<Pubkey>()),
+            2 => Ok(1 + size_of::<Pubkey>()),
+            _ => Err(ProgramError::InvalidAccountData)
+        }
+    }
+}
+
 pub struct HashablePluginSchema<'a> {
     pub index: u64,
     pub authority: PluginAuthority,
@@ -430,4 +458,106 @@ impl<'a> Serialize for CompressionProof<'a> {
         offset += self.plugins.serialize_to(&mut buffer[offset..]);
         offset
     }
+}
+
+/// Deserializes royalties only. Very ugly but I had a specific need for it.
+/// Deserialization is very hard without using heap, as there are no aligment guarantees.
+/// If no royalties were found, the list of creators will be empty.
+pub fn read_royalties_asset<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]), ProgramError> {
+    let key = Key::deserialize_from(bytes)?;
+
+    // skip the header
+    let offset = match key {
+        Key::AssetV1 => {
+            BaseAssetV1::skip_bytes(bytes)
+        },
+        _ => {
+            return Err(ProgramError::InvalidAccountData)
+        }
+    }?;
+
+    read_royalties(&bytes[offset..])
+}
+
+/// Deserializes royalties only. Very ugly but I had a specific need for it.
+/// Deserialization is very hard without using heap, as there are no aligment guarantees.
+/// If no royalties were found, the list of creators will be empty.
+pub fn read_royalties_collection<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]), ProgramError> {
+    let key = Key::deserialize_from(bytes)?;
+
+    // skip the header
+    let offset = match key {
+        Key::CollectionV1 => {
+            BaseCollectionV1::skip_bytes(bytes)
+        },
+        _ => {
+            return Err(ProgramError::InvalidAccountData)
+        }
+    }?;
+
+    read_royalties(&bytes[offset..])
+}
+
+
+pub fn read_royalties<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]), ProgramError> {
+    // read the PluginHeaderV1
+    let plugin_header = PluginHeaderV1::deserialize(bytes)?;
+    let mut offset = plugin_header.plugin_registry_offset as usize;
+
+    // read the PluginRegistryV1Safe
+
+    let key = Key::deserialize_from(&bytes[offset..])?;
+    offset += 1;
+
+    if ! matches!(key, Key::PluginRegistryV1) {
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    let registry_len = u32::deserialize(&bytes[offset..])?;
+    offset += size_of::<u32>();
+
+    for _ in 0..registry_len {
+        let plugin_type = bytes[offset];
+        offset += 1;
+
+        // skip authority
+        offset += PluginAuthority::skip_bytes(&bytes[offset..])?;
+
+        // read offset
+        let plugin_offset = u64::deserialize(&bytes[offset..])?;
+        offset += size_of::<u64>();
+
+        // check that it is a royalties plugin
+        if plugin_type == 0 {
+            offset = plugin_offset as usize;
+
+            // deserialize Plugin discriminant and check it again
+            let plugin_disc = bytes[offset];
+            offset += 1;
+
+            if plugin_disc == 0 {
+                // deserialize the Royalties
+                let basis_points = u16::deserialize(&bytes[offset..])?;
+                offset += 2;
+
+                let num_creators = u32::deserialize(&bytes[offset..])?;
+                offset += 2;
+
+                let creators_start = offset;
+                let creators_end = creators_start + (size_of::<Creator>() * num_creators as usize);
+
+                // creators are a pubkey followed by a u8
+                // this is a miracle
+                // it means there are no aligment issues and I can just return it as-is
+                let creators: &[Creator] = try_cast_slice(&bytes[creators_start..creators_end])
+                    .map_err(|_| ProgramError::InvalidAccountData)?;
+
+                return Ok((basis_points, creators));
+            } else {
+                return Err(ProgramError::InvalidAccountData);
+            }
+        }
+    }
+
+    Ok((0, &[]))
 }
