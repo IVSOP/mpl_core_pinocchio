@@ -1,7 +1,10 @@
-use bytemuck::{Pod, Zeroable, try_cast_slice};
+use bytemuck::{try_cast_slice, Pod, Zeroable};
 use pinocchio::{program_error::ProgramError, pubkey::Pubkey};
 
-use crate::data::{DeserializeSized, Serialize, Skip, asset::{BaseAssetV1, BaseCollectionV1, Key, PluginHeaderV1}};
+use crate::data::{
+    asset::{BaseAssetV1, BaseCollectionV1, Key, PluginHeaderV1},
+    DeserializeSized, Serialize, Skip,
+};
 
 #[derive(Pod, Zeroable, Clone, Copy)]
 #[repr(C)]
@@ -346,7 +349,7 @@ impl Skip for PluginAuthority {
             1 => Ok(1),
             2 => Ok(1),
             3 => Ok(1 + size_of::<Pubkey>()),
-            _ => Err(ProgramError::InvalidAccountData)
+            _ => Err(ProgramError::InvalidAccountData),
         }
     }
 }
@@ -419,7 +422,7 @@ impl Skip for UpdateAuthority {
             0 => Ok(1),
             1 => Ok(1 + size_of::<Pubkey>()),
             2 => Ok(1 + size_of::<Pubkey>()),
-            _ => Err(ProgramError::InvalidAccountData)
+            _ => Err(ProgramError::InvalidAccountData),
         }
     }
 }
@@ -460,20 +463,29 @@ impl<'a> Serialize for CompressionProof<'a> {
     }
 }
 
+pub struct RoyaltiesInfo<'a> {
+    pub basis_points: u16,
+    pub creators: &'a [Creator],
+}
+
+impl<'a> RoyaltiesInfo<'_> {
+    pub fn is_empty(&self) -> bool {
+        // TODO: check the creators len instead??
+        // either way if basis points are 0 then royalties do nothing
+        return self.basis_points == 0;
+    }
+}
+
 /// Deserializes royalties only. Very ugly but I had a specific need for it.
 /// Deserialization is very hard without using heap, as there are no aligment guarantees.
 /// If no royalties were found, the list of creators will be empty.
-pub fn read_royalties_asset<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]), ProgramError> {
+pub fn read_royalties_asset<'a>(bytes: &'a [u8]) -> Result<RoyaltiesInfo<'a>, ProgramError> {
     let key = Key::deserialize_from(bytes)?;
 
     // skip the header
     let offset = match key {
-        Key::AssetV1 => {
-            BaseAssetV1::skip_bytes(bytes)
-        },
-        _ => {
-            return Err(ProgramError::InvalidAccountData)
-        }
+        Key::AssetV1 => BaseAssetV1::skip_bytes(bytes),
+        _ => return Err(ProgramError::InvalidAccountData),
     }?;
 
     read_royalties(&bytes[offset..])
@@ -481,25 +493,20 @@ pub fn read_royalties_asset<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]),
 
 /// Deserializes royalties only. Very ugly but I had a specific need for it.
 /// Deserialization is very hard without using heap, as there are no aligment guarantees.
-/// If no royalties were found, the list of creators will be empty.
-pub fn read_royalties_collection<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]), ProgramError> {
+/// If no royalties were found, the list of creators will be empty, and the basis points will be zero.
+pub fn read_royalties_collection<'a>(bytes: &'a [u8]) -> Result<RoyaltiesInfo<'a>, ProgramError> {
     let key = Key::deserialize_from(bytes)?;
 
     // skip the header
     let offset = match key {
-        Key::CollectionV1 => {
-            BaseCollectionV1::skip_bytes(bytes)
-        },
-        _ => {
-            return Err(ProgramError::InvalidAccountData)
-        }
+        Key::CollectionV1 => BaseCollectionV1::skip_bytes(bytes),
+        _ => return Err(ProgramError::InvalidAccountData),
     }?;
 
     read_royalties(&bytes[offset..])
 }
 
-
-pub fn read_royalties<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]), ProgramError> {
+pub fn read_royalties<'a>(bytes: &'a [u8]) -> Result<RoyaltiesInfo<'a>, ProgramError> {
     // read the PluginHeaderV1
     let plugin_header = PluginHeaderV1::deserialize(bytes)?;
     let mut offset = plugin_header.plugin_registry_offset as usize;
@@ -509,7 +516,7 @@ pub fn read_royalties<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]), Progr
     let key = Key::deserialize_from(&bytes[offset..])?;
     offset += 1;
 
-    if ! matches!(key, Key::PluginRegistryV1) {
+    if !matches!(key, Key::PluginRegistryV1) {
         return Err(ProgramError::InvalidAccountData);
     }
 
@@ -552,12 +559,18 @@ pub fn read_royalties<'a>(bytes: &'a [u8]) -> Result<(u16, &'a [Creator]), Progr
                 let creators: &[Creator] = try_cast_slice(&bytes[creators_start..creators_end])
                     .map_err(|_| ProgramError::InvalidAccountData)?;
 
-                return Ok((basis_points, creators));
+                return Ok(RoyaltiesInfo {
+                    basis_points,
+                    creators,
+                });
             } else {
                 return Err(ProgramError::InvalidAccountData);
             }
         }
     }
 
-    Ok((0, &[]))
+    Ok(RoyaltiesInfo {
+        basis_points: 0,
+        creators: &[],
+    })
 }

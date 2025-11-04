@@ -5,7 +5,7 @@ use pinocchio::{
     ProgramResult,
 };
 
-use crate::data::{Serialize, burn_asset::BurnAssetV1InstructionData};
+use crate::data::{burn_asset::BurnAssetV1InstructionData, Serialize};
 
 /// Burn an asset
 ///
@@ -44,7 +44,11 @@ pub struct BurnV1<'a> {
 
 impl BurnV1<'_> {
     #[inline(always)]
-    pub fn invoke(&self, data: &BurnAssetV1InstructionData, serialization_buffer: &mut [u8]) -> ProgramResult {
+    pub fn invoke(
+        &self,
+        data: &BurnAssetV1InstructionData,
+        serialization_buffer: &mut [u8],
+    ) -> ProgramResult {
         self.invoke_signed(data, &[], serialization_buffer)
     }
 
@@ -96,4 +100,3 @@ impl BurnV1<'_> {
         )
     }
 }
-

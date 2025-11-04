@@ -1,14 +1,14 @@
 use pinocchio::{program_error::ProgramError, pubkey::Pubkey};
 
 pub mod asset;
+pub mod burn_asset;
+pub mod burn_collection;
 pub mod create_asset;
 pub mod create_collection;
 pub mod plugins;
 pub mod transfer;
 pub mod update_asset_plugin;
 pub mod update_collection_plugin;
-pub mod burn_collection;
-pub mod burn_asset;
 
 pub trait Serialize {
     /// Serialize into a slice, starting at 0, returning how many bytes were written
@@ -16,7 +16,9 @@ pub trait Serialize {
 }
 
 pub trait DeserializeSized {
-    fn deserialize(bytes: &[u8]) -> Result<Self, ProgramError> where Self: Sized;
+    fn deserialize(bytes: &[u8]) -> Result<Self, ProgramError>
+    where
+        Self: Sized;
 }
 
 pub trait Skip {
@@ -31,9 +33,7 @@ pub fn skip_sized<T: Sized>() -> usize {
 // faster but items must be sized
 pub fn skip_sized_slice<T: Sized>(bytes: &[u8]) -> Result<usize, ProgramError> {
     let len = u32::deserialize(bytes)?;
-    Ok(
-        4 + (size_of::<T>() * len as usize)
-    )
+    Ok(4 + (size_of::<T>() * len as usize))
 }
 
 impl Serialize for &str {
@@ -68,15 +68,9 @@ impl<T: Skip> Skip for Option<T> {
     fn skip_bytes(buffer: &[u8]) -> Result<usize, ProgramError> {
         let disc = buffer[0];
         match disc {
-            0 => {
-                Ok(1)
-            },
-            1 => {
-                Ok(1 + T::skip_bytes(&buffer[1..])?)
-            },
-            _ => {
-                Err(ProgramError::InvalidAccountData)
-            }
+            0 => Ok(1),
+            1 => Ok(1 + T::skip_bytes(&buffer[1..])?),
+            _ => Err(ProgramError::InvalidAccountData),
         }
     }
 }
@@ -154,7 +148,7 @@ impl DeserializeSized for u16 {
         Ok(u16::from_le_bytes(
             bytes[0..2]
                 .try_into()
-                .map_err(|_| ProgramError::InvalidAccountData)?
+                .map_err(|_| ProgramError::InvalidAccountData)?,
         ))
     }
 }
@@ -171,7 +165,7 @@ impl DeserializeSized for u32 {
         Ok(u32::from_le_bytes(
             bytes[0..4]
                 .try_into()
-                .map_err(|_| ProgramError::InvalidAccountData)?
+                .map_err(|_| ProgramError::InvalidAccountData)?,
         ))
     }
 }
@@ -194,18 +188,14 @@ impl DeserializeSized for u64 {
         Ok(u64::from_le_bytes(
             bytes[0..8]
                 .try_into()
-                .map_err(|_| ProgramError::InvalidAccountData)?
+                .map_err(|_| ProgramError::InvalidAccountData)?,
         ))
     }
 }
 
 impl Serialize for bool {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        buffer[0] = if *self {
-            1
-        } else {
-            0
-        };
+        buffer[0] = if *self { 1 } else { 0 };
         1
     }
 }

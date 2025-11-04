@@ -1,7 +1,8 @@
 use pinocchio::{program_error::ProgramError, pubkey::Pubkey};
 
 use crate::data::{
-    DeserializeSized, Serialize, Skip, plugins::{Plugin, PluginAuthority, UpdateAuthority}, skip_sized, skip_sized_slice
+    plugins::{Plugin, PluginAuthority, UpdateAuthority},
+    skip_sized, skip_sized_slice, DeserializeSized, Serialize, Skip,
 };
 use core::mem::MaybeUninit;
 
@@ -189,17 +190,15 @@ impl DeserializeSized for PluginHeaderV1 {
     fn deserialize(bytes: &[u8]) -> Result<Self, ProgramError> {
         let key = Key::deserialize_from(bytes)?;
 
-        if ! matches!(key, Key::PluginHeaderV1) {
+        if !matches!(key, Key::PluginHeaderV1) {
             return Err(ProgramError::InvalidAccountData);
         }
         let plugin_registry_offset = u64::deserialize(&bytes[1..])?;
 
-        Ok(
-            Self {
-                key,
-                plugin_registry_offset,
-            }
-        )
+        Ok(Self {
+            key,
+            plugin_registry_offset,
+        })
     }
 }
 
