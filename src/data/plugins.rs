@@ -534,6 +534,8 @@ pub fn read_royalties<'a>(bytes: &'a [u8], offset: usize) -> Result<RoyaltiesInf
     offset += size_of::<u32>();
 
     for _ in 0..registry_len {
+        // read the RegistryRecordSafe
+
         let plugin_type = bytes[offset];
         offset += 1;
 
@@ -544,7 +546,7 @@ pub fn read_royalties<'a>(bytes: &'a [u8], offset: usize) -> Result<RoyaltiesInf
         let plugin_offset = u64::deserialize(&bytes[offset..])?;
         offset += size_of::<u64>();
 
-        // check that it is a royalties plugin
+        // check that it is a royalties plugin (type == 0)
         if plugin_type == 0 {
             offset = plugin_offset as usize;
 
@@ -555,10 +557,10 @@ pub fn read_royalties<'a>(bytes: &'a [u8], offset: usize) -> Result<RoyaltiesInf
             if plugin_disc == 0 {
                 // deserialize the Royalties
                 let basis_points = u16::deserialize(&bytes[offset..])?;
-                offset += 2;
+                offset += size_of::<u16>();
 
                 let num_creators = u32::deserialize(&bytes[offset..])?;
-                offset += 2;
+                offset += size_of::<u32>();
 
                 let creators_start = offset;
                 let creators_end = creators_start + (size_of::<Creator>() * num_creators as usize);
