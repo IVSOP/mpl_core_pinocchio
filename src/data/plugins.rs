@@ -488,7 +488,12 @@ pub fn read_royalties_asset<'a>(bytes: &'a [u8]) -> Result<RoyaltiesInfo<'a>, Pr
         _ => return Err(ProgramError::InvalidAccountData),
     }?;
 
-    read_royalties(&bytes[offset..])
+    // there might not be any plugins. if this happens, there will also not be any registry
+    if offset == bytes.len() {
+        Ok(RoyaltiesInfo { basis_points: 0, creators: &[] })
+    } else {
+        read_royalties(bytes, offset)
+    }
 }
 
 /// Deserializes royalties only. Very ugly but I had a specific need for it.
@@ -503,12 +508,17 @@ pub fn read_royalties_collection<'a>(bytes: &'a [u8]) -> Result<RoyaltiesInfo<'a
         _ => return Err(ProgramError::InvalidAccountData),
     }?;
 
-    read_royalties(&bytes[offset..])
+    // there might not be any plugins. if this happens, there will also not be any registry
+    if offset == bytes.len() {
+        Ok(RoyaltiesInfo { basis_points: 0, creators: &[] })
+    } else {
+        read_royalties(bytes, offset)
+    }
 }
 
-pub fn read_royalties<'a>(bytes: &'a [u8]) -> Result<RoyaltiesInfo<'a>, ProgramError> {
+pub fn read_royalties<'a>(bytes: &'a [u8], offset: usize) -> Result<RoyaltiesInfo<'a>, ProgramError> {
     // read the PluginHeaderV1
-    let plugin_header = PluginHeaderV1::deserialize(bytes)?;
+    let plugin_header = PluginHeaderV1::deserialize(&bytes[offset..])?;
     let mut offset = plugin_header.plugin_registry_offset as usize;
 
     // read the PluginRegistryV1Safe

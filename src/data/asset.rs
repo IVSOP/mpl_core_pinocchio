@@ -107,7 +107,7 @@ impl<'a> Serialize for BaseAssetV1<'a> {
 impl<'a> Skip for BaseAssetV1<'_> {
     // DOES NOT ASSUME KEY WAS SKIPPED
     fn skip_bytes(bytes: &[u8]) -> Result<usize, ProgramError> {
-        let mut offset: usize = 0;
+        let mut offset: usize = 1;
         offset += skip_sized::<Pubkey>();
         offset += UpdateAuthority::skip_bytes(&bytes[offset..])?;
         offset += skip_sized_slice::<u8>(&bytes[offset..])?;
@@ -129,7 +129,7 @@ pub struct BaseCollectionV1<'a> {
 impl<'a> Skip for BaseCollectionV1<'_> {
     // DOES NOT ASSUME KEY WAS SKIPPED
     fn skip_bytes(bytes: &[u8]) -> Result<usize, ProgramError> {
-        let mut offset: usize = 0;
+        let mut offset: usize = 1;
         offset += skip_sized::<Pubkey>();
         offset += skip_sized_slice::<u8>(&bytes[offset..])?;
         offset += skip_sized_slice::<u8>(&bytes[offset..])?;
