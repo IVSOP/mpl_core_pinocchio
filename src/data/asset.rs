@@ -50,7 +50,7 @@ impl<'a> Serialize for AssetInfo<'a> {
             *registry_record = MaybeUninit::new(RegistryRecordSafe {
                 plugin_type: plugin_auth_pair.plugin.get_plugin_number(),
                 authority: plugin_auth_pair.authority,
-                offset: start_offset as u64,
+                offset: u64::try_from(start_offset).unwrap(), // didn't feel like changing this to be a Result<>
             });
         }
 
@@ -74,7 +74,7 @@ impl<'a> Serialize for AssetInfo<'a> {
         // now finally serialize the header.......
         let header = PluginHeaderV1 {
             key: Key::PluginHeaderV1,
-            plugin_registry_offset: registry_offset as u64,
+            plugin_registry_offset: u64::try_from(registry_offset).unwrap(), // didn't feel like changing this to be a Result<>
         };
 
         header.serialize_to(&mut buffer[plugin_header_offset..]);

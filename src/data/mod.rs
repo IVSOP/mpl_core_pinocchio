@@ -33,7 +33,10 @@ pub fn skip_sized<T: Sized>() -> usize {
 // faster but items must be sized
 pub fn skip_sized_slice<T: Sized>(bytes: &[u8]) -> Result<usize, ProgramError> {
     let len = u32::deserialize(bytes)?;
-    Ok(4 + (size_of::<T>() * len as usize))
+    Ok(
+        4 + (size_of::<T>()
+            * usize::try_from(len).map_err(|_| ProgramError::ArithmeticOverflow)?),
+    )
 }
 
 impl Serialize for &str {
@@ -42,7 +45,9 @@ impl Serialize for &str {
         let len = bytes.len();
         let total_len = 4 + len;
 
-        buffer[..4].copy_from_slice(&(len as u32).to_le_bytes());
+        let len_u32 = u32::try_from(len).unwrap(); // didn't feel like changing this to be a Result<>
+
+        buffer[..4].copy_from_slice(&len_u32.to_le_bytes());
         buffer[4..total_len].copy_from_slice(bytes);
 
         total_len
@@ -77,7 +82,7 @@ impl<T: Skip> Skip for Option<T> {
 
 impl<T: Serialize> Serialize for [T] {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        let len = self.len() as u32;
+        let len = u32::try_from(self.len()).unwrap(); // didn't feel like changing this to be a Result<>
         buffer[..4].copy_from_slice(&len.to_le_bytes());
 
         let mut offset = 4;
@@ -92,7 +97,7 @@ impl<T: Serialize> Serialize for [T] {
 
 impl<T: Serialize> Serialize for &[T] {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        let len = self.len() as u32;
+        let len = u32::try_from(self.len()).unwrap(); // didn't feel like changing this to be a Result<>
         buffer[..4].copy_from_slice(&len.to_le_bytes());
 
         let mut offset = 4;

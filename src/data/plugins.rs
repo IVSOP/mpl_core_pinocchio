@@ -490,7 +490,10 @@ pub fn read_royalties_asset<'a>(bytes: &'a [u8]) -> Result<RoyaltiesInfo<'a>, Pr
 
     // there might not be any plugins. if this happens, there will also not be any registry
     if offset == bytes.len() {
-        Ok(RoyaltiesInfo { basis_points: 0, creators: &[] })
+        Ok(RoyaltiesInfo {
+            basis_points: 0,
+            creators: &[],
+        })
     } else {
         read_royalties(bytes, offset)
     }
@@ -510,16 +513,23 @@ pub fn read_royalties_collection<'a>(bytes: &'a [u8]) -> Result<RoyaltiesInfo<'a
 
     // there might not be any plugins. if this happens, there will also not be any registry
     if offset == bytes.len() {
-        Ok(RoyaltiesInfo { basis_points: 0, creators: &[] })
+        Ok(RoyaltiesInfo {
+            basis_points: 0,
+            creators: &[],
+        })
     } else {
         read_royalties(bytes, offset)
     }
 }
 
-pub fn read_royalties<'a>(bytes: &'a [u8], offset: usize) -> Result<RoyaltiesInfo<'a>, ProgramError> {
+pub fn read_royalties<'a>(
+    bytes: &'a [u8],
+    offset: usize,
+) -> Result<RoyaltiesInfo<'a>, ProgramError> {
     // read the PluginHeaderV1
     let plugin_header = PluginHeaderV1::deserialize(&bytes[offset..])?;
-    let mut offset = plugin_header.plugin_registry_offset as usize;
+    let mut offset = usize::try_from(plugin_header.plugin_registry_offset)
+        .map_err(|_| ProgramError::ArithmeticOverflow)?;
 
     // read the PluginRegistryV1Safe
 
@@ -548,7 +558,8 @@ pub fn read_royalties<'a>(bytes: &'a [u8], offset: usize) -> Result<RoyaltiesInf
 
         // check that it is a royalties plugin (type == 0)
         if plugin_type == 0 {
-            offset = plugin_offset as usize;
+            offset =
+                usize::try_from(plugin_offset).map_err(|_| ProgramError::ArithmeticOverflow)?;
 
             // deserialize Plugin discriminant and check it again
             let plugin_disc = bytes[offset];
@@ -563,7 +574,10 @@ pub fn read_royalties<'a>(bytes: &'a [u8], offset: usize) -> Result<RoyaltiesInf
                 offset += size_of::<u32>();
 
                 let creators_start = offset;
-                let creators_end = creators_start + (size_of::<Creator>() * num_creators as usize);
+                let creators_end = creators_start
+                    + (size_of::<Creator>()
+                        * usize::try_from(num_creators)
+                            .map_err(|_| ProgramError::ArithmeticOverflow)?);
 
                 // creators are a pubkey followed by a u8
                 // this is a miracle

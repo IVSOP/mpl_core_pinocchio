@@ -9,7 +9,7 @@ pub struct BurnAssetV1InstructionData<'a> {
 
 impl<'a> Serialize for BurnAssetV1InstructionData<'a> {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        buffer[0] = Instructions::BurnAsset as u8;
+        buffer[0] = Instructions::BurnAsset.to_u8();
         let mut offset = 1;
 
         offset += self.compression_proof.serialize_to(&mut buffer[offset..]);

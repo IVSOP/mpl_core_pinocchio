@@ -28,7 +28,7 @@ pub struct CreateAssetV1InstructionData<'a> {
 
 impl<'a> Serialize for CreateAssetV1InstructionData<'a> {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        buffer[0] = Instructions::CreateAsset as u8;
+        buffer[0] = Instructions::CreateAsset.to_u8();
         let mut offset = 1;
 
         offset += self.data_state.serialize_to(&mut buffer[offset..]);

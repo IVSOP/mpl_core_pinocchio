@@ -11,7 +11,7 @@ pub struct CreateCollectionV1InstructionData<'a> {
 
 impl<'a> Serialize for CreateCollectionV1InstructionData<'a> {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
-        buffer[0] = Instructions::CreateCollection as u8;
+        buffer[0] = Instructions::CreateCollection.to_u8();
         let mut offset = 1;
 
         offset += self.name.serialize_to(&mut buffer[offset..]);
