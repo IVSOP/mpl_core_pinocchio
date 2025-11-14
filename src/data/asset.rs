@@ -92,6 +92,29 @@ pub struct BaseAssetV1<'a> {
     pub seq: Option<u64>,
 }
 
+impl<'a> BaseAssetV1<'a> {
+    /// Extracts the key from UpdateAuthority, checking that the authority is of the Collection type
+    pub fn get_collection(bytes: &'a [u8]) -> Result<&'a Pubkey, ProgramError> {
+        let key = Key::deserialize_from(bytes)?;
+        if !matches!(key, Key::AssetV1) {
+            return Err(ProgramError::InvalidAccountData)?;
+        }
+
+        // skip key + owner
+        let mut offset = 1 + 32;
+
+        let update_authority_discriminant = bytes[offset];
+        offset += 1;
+
+        if update_authority_discriminant != 2 {
+            return Err(ProgramError::InvalidAccountData)?;   
+        }
+
+        let collection_key = bytes[offset..offset + 32].try_into().map_err(|_| ProgramError::InvalidAccountData)?;
+        return Ok(collection_key);
+    }
+}
+
 impl<'a> Serialize for BaseAssetV1<'a> {
     fn serialize_to(&self, buffer: &mut [u8]) -> usize {
         let mut offset = self.key.serialize_to(buffer);
